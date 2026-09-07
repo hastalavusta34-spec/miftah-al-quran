@@ -531,11 +531,34 @@
   .freqbar-fill{ height:100%; background:var(--teal); }
   .freqbar-n{ font-size:12px; color:var(--ink-dim); width:34px; text-align:right; font-variant-numeric:tabular-nums; }
 
+  #sidebartoggle, #sidebar-mobile-head, #sidebar-overlay-bg{ display:none; }
+
   @media (max-width: 860px){
-    #app{ grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; grid-template-areas:"topbar" "sidebar" "main"; }
-    #sidebar{ max-height:40vh; border-right:none; border-bottom:1px solid var(--line); }
+    #app{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; grid-template-areas:"topbar" "main"; }
     #main-inner{ padding:24px 18px 80px; }
     #brand span{ display:none; }
+    #sidebartoggle{ display:inline-flex; }
+
+    #sidebar-overlay-bg{
+      display:block; position:fixed; inset:0; background:rgba(10,20,15,.45); z-index:189;
+      opacity:0; pointer-events:none; transition:opacity .2s ease;
+    }
+    #sidebar-overlay-bg.open{ opacity:1; pointer-events:auto; }
+
+    #sidebar{
+      position:fixed; inset:0; z-index:190; max-height:none; border:none;
+      transform:translateX(100%); transition:transform .25s ease;
+      box-shadow:-6px 0 24px rgba(0,0,0,.2);
+    }
+    #sidebar.open{ transform:translateX(0); }
+    #sidebar-mobile-head{
+      display:flex; align-items:center; justify-content:space-between; flex:none;
+      padding:16px 18px; border-bottom:1px solid var(--line); font-size:15px;
+    }
+    #sidebar-mobile-head button{
+      width:32px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--paper);
+      color:var(--ink); font-size:15px; cursor:pointer;
+    }
   }
 
   @media (max-width: 560px){
@@ -660,12 +683,18 @@
       <div id="arabickbd"></div>
     </div>
     <div id="topbar-actions">
+      <button class="iconbtn" id="sidebartoggle" title="السور والقوائم">☰ السور</button>
       <button class="iconbtn" id="homebtn" title="الرئيسية">⌂ الرئيسية</button>
       <button class="iconbtn" id="themetoggle" title="تغيير المظهر">◐ المظهر</button>
     </div>
   </div>
 
+  <div id="sidebar-overlay-bg"></div>
   <div id="sidebar">
+    <div id="sidebar-mobile-head">
+      <b>السور والقوائم</b>
+      <button id="sidebarclose" title="إغلاق">✕</button>
+    </div>
     <div id="sidebar-tabs">
       <button class="stab active" data-tab="surahs">السور</button>
       <button class="stab" data-tab="bookmarks">المحفوظات</button>
@@ -2112,7 +2141,10 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
     else if (tab === 'stats') renderStats();
   }
   document.querySelectorAll('.stab').forEach(function(el){
-    el.addEventListener('click', function(){ switchTab(el.dataset.tab); });
+    el.addEventListener('click', function(){
+      switchTab(el.dataset.tab);
+      if (el.dataset.tab !== 'surahs') closeMobileSidebar();
+    });
   });
   document.getElementById('surahfilter').addEventListener('input', function(){ renderSurahList(this.value); });
 
@@ -2137,7 +2169,28 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
     themeBtn.textContent = cur === 'auto' ? '◐ المظهر' : (cur === 'dark' ? '● داكن' : '○ فاتح');
   })();
 
-  document.getElementById('homebtn').addEventListener('click', function(){ switchTab('surahs'); renderWelcome(); });
+  document.getElementById('homebtn').addEventListener('click', function(){ switchTab('surahs'); renderWelcome(); closeMobileSidebar(); });
+
+  /* ---------------- Mobile sidebar overlay ---------------- */
+  var sidebarEl = document.getElementById('sidebar');
+  var sidebarOverlayBg = document.getElementById('sidebar-overlay-bg');
+  function openMobileSidebar(){
+    sidebarEl.classList.add('open');
+    sidebarOverlayBg.classList.add('open');
+  }
+  function closeMobileSidebar(){
+    sidebarEl.classList.remove('open');
+    sidebarOverlayBg.classList.remove('open');
+  }
+  document.getElementById('sidebartoggle').addEventListener('click', openMobileSidebar);
+  document.getElementById('sidebarclose').addEventListener('click', closeMobileSidebar);
+  sidebarOverlayBg.addEventListener('click', closeMobileSidebar);
+  sidebarEl.addEventListener('click', function(e){
+    if (window.innerWidth > 860) return;
+    if (e.target.closest('.surah-row') || e.target.closest('.fs-row') || e.target.closest('.bm-row')){
+      closeMobileSidebar();
+    }
+  });
 
   /* ---------------- Splash gate ---------------- */
   var splash = document.getElementById('splash');
