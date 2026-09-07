@@ -491,6 +491,9 @@
   .prayer-nav-btn.active{ background:var(--teal); border-color:var(--teal); color:#fff; }
   .prayer-nav-btn.prayer-nav-home{ margin-left:auto; }
   .salat-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:16px; }
+  .hifdh-step{ margin-top:16px; }
+  .hifdh-step-lbl{ font-size:12.5px; font-weight:700; color:var(--teal); margin-bottom:8px; }
+  .hifdh-step audio{ border-radius:10px; }
   .salat-top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
   .salat-icon{ font-size:22px; }
   .salat-name{ font-size:16px; font-weight:700; font-family:"Zilla Slab",serif; }
@@ -1193,6 +1196,7 @@
       '<div class="stat-grid" id="prophetscard">'+
         '<div class="feature-card" data-prophets="1"><div class="fc-icon">📖</div><div class="fc-title">قصص الأنبياء عليهم السلام</div><div class="fc-sub">'+((DATA.prophets||[]).length)+' نبيًا مذكورًا في القرآن، قصة كل واحد على حدة</div></div>'+
         '<div class="feature-card" data-hadith="1"><div class="fc-icon">📜</div><div class="fc-title">أحاديث نبوية</div><div class="fc-sub">أحاديث صحيحة مختارة من سنة النبي محمد صلى الله عليه وسلم</div></div>'+
+        '<div class="feature-card" data-hifdh="1"><div class="fc-icon">👶</div><div class="fc-title">حفظ القرآن للأطفال</div><div class="fc-sub">تلاوة بالتجويد ثم ترديد بصوت الأطفال</div></div>'+
       '</div></section>';
 
     mainInner.innerHTML = html;
@@ -1216,6 +1220,54 @@
     mainInner.querySelectorAll('.feature-card[data-hadith]').forEach(function(el){
       el.addEventListener('click', function(){ openHadithView(); });
     });
+    mainInner.querySelectorAll('.feature-card[data-hifdh]').forEach(function(el){
+      el.addEventListener('click', function(){ openHifdhView(); });
+    });
+  }
+
+  /* ---------------- Hifdh corner for children (adult tajwid + child repetition) ---------------- */
+  var CHILD_AUDIO_BASE = 'https://cdn.islamic.network/quran/audio-surah/128/ar.alhusaynialazazichildren/';
+  var CHILD_AUDIO_SURAHS = [1, 2, 4, 5, 10];
+
+  function openHifdhView(){
+    switchTab('surahs');
+    currentChapter = null;
+    var html = '<div class="breadcrumb">الرئيسية / حفظ القرآن للأطفال</div>';
+    html += '<h2 style="font-size:24px;margin-bottom:6px;">👶 حفظ القرآن للأطفال</h2>';
+    html += '<p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:8px;">لتيسير الحفظ: استمع الطفل أولًا للآية بصوت القارئ الكبير مع التجويد، ثم يعيد الاستماع بصوت الأطفال ليردّد معه بسهولة.</p>';
+    html += '<p style="color:var(--ink-dim);font-size:12px;margin-bottom:22px;">ملاحظة بالصدق: تسجيل «ترديد الأطفال» مصدره عام ومتاح حاليًا لعدد محدود من السور فقط (المذكورة أدناه). لبقية السور، استمع بصوت القارئ الكبير وكرّر الاستماع للتدرب حتى يتوفر تسجيل أطفال إضافي.</p>';
+
+    html += '<div class="stat-grid" style="margin-bottom:26px;">';
+    CHILD_AUDIO_SURAHS.forEach(function(n){
+      var s = SURAHS[n-1];
+      html += '<div class="feature-card" data-hifdh-n="'+n+'"><div class="fc-icon">'+ (n===1?'🌟':'📖') +'</div><div class="fc-title">'+s.ar+'</div><div class="fc-sub">'+s.count+' آية</div></div>';
+    });
+    html += '</div>';
+
+    html += '<div id="hifdhdetail"></div>';
+
+    mainInner.innerHTML = html;
+    mainInner.querySelectorAll('[data-hifdh-n]').forEach(function(el){
+      el.addEventListener('click', function(){ renderHifdhDetail(parseInt(el.dataset.hifdhN,10)); });
+    });
+    document.getElementById('main').scrollTop = 0;
+    renderHifdhDetail(CHILD_AUDIO_SURAHS[0]);
+  }
+
+  function renderHifdhDetail(n){
+    var s = SURAHS[n-1];
+    var host = document.getElementById('hifdhdetail');
+    if (!host) return;
+    host.innerHTML =
+      '<div class="salat-card">'+
+        '<div class="salat-top"><div class="salat-icon">'+s.ar+'</div></div>'+
+        '<div class="hifdh-step"><div class="hifdh-step-lbl">١) استماع بالتجويد (صوت القارئ)</div>'+
+          '<audio controls preload="none" style="width:100%;" src="'+AUDIO_BASE+n+'.mp3"></audio></div>'+
+        '<div class="hifdh-step"><div class="hifdh-step-lbl">٢) ترديد بصوت الأطفال (كرّر بعد الاستماع)</div>'+
+          '<audio controls preload="none" style="width:100%;" src="'+CHILD_AUDIO_BASE+n+'.mp3"></audio></div>'+
+        '<button class="iconbtn" style="margin-top:10px;" id="hifdhopensurah">فتح السورة في القارئ الكامل ←</button>'+
+      '</div>';
+    document.getElementById('hifdhopensurah').addEventListener('click', function(){ openSurah(n, 1); });
   }
 
   /* ---------------- Hadith (sayings of the Prophet Muhammad, peace be upon him) ---------------- */
