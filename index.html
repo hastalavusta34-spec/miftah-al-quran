@@ -260,6 +260,8 @@
   .empty-note{ padding:20px 16px; color:var(--ink-dim); font-size:13px; line-height:1.6; }
 
   .bm-row{ display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .bm-list{ border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .bm-list .fs-row:last-child, .bm-list .bm-row:last-child{ border-bottom:none; }
   .bm-row:hover{ background:var(--teal-dim); }
   .bm-ref{ font-size:11px; font-weight:700; color:var(--teal); text-transform:uppercase; }
   .bm-snip{ font-family:"Amiri",serif; direction:rtl; font-size:15px; color:var(--ink-dim); margin-top:2px; }
@@ -486,10 +488,38 @@
   .freqbar-n{ font-size:12px; color:var(--ink-dim); width:34px; text-align:right; font-variant-numeric:tabular-nums; }
 
   @media (max-width: 860px){
-    #app{ grid-template-columns: 1fr; grid-template-rows: 64px auto 1fr; grid-template-areas:"topbar" "sidebar" "main"; }
+    #app{ grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; grid-template-areas:"topbar" "sidebar" "main"; }
     #sidebar{ max-height:40vh; border-right:none; border-bottom:1px solid var(--line); }
     #main-inner{ padding:24px 18px 80px; }
     #brand span{ display:none; }
+  }
+
+  @media (max-width: 560px){
+    #topbar{ flex-wrap:wrap; height:auto; padding:10px 12px; gap:8px; row-gap:8px; }
+    #brand{ order:1; }
+    #brand h1{ font-size:16px; }
+    #globalsearch{ order:3; flex-basis:100%; max-width:none; }
+    #topbar-actions{ order:2; margin-left:0; }
+    .iconbtn{ padding:8px 9px; font-size:12px; }
+    #app.popup-mode{}
+    #main-inner{ padding:18px 14px 70px; }
+    .stat-grid{ grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+    .stat-tile{ padding:14px; }
+    .stat-tile .num{ font-size:22px; }
+    .welcome-hero{ gap:16px; padding:20px 0 14px; }
+    .welcome-hero .wa{ font-size:36px; }
+    .home-dua-card{ padding:24px 18px 20px; }
+    .hd-bismillah{ font-size:24px; }
+    .hd-dua{ font-size:13.5px; }
+    #surah-title-ar, #surah-title-lat h2{ font-size:20px; }
+    .verse-ar{ font-size:22px; line-height:2.2; }
+    .kbd-key{ max-width:30px; height:32px; font-size:14px; }
+    .kbd-row{ flex-wrap:wrap; gap:4px; }
+    .miniplayer{ right:10px; left:10px; bottom:14px; max-width:none; }
+    .tasbih-float{ left:10px; right:10px; bottom:14px; width:auto; }
+    .surah-info .tr{ font-size:13px; }
+    .surah-info .meta{ font-size:10px; }
+    .feature-card{ padding:16px 14px; }
   }
   [hidden]{ display:none !important; }
 
@@ -753,12 +783,13 @@
     });
   }
 
-  function renderBookmarkList(){
+  function openBookmarksView(){
     var favEntries = Object.keys(favSurahs).map(function(k){ return parseInt(k,10); }).sort(function(a,b){return a-b;});
-    var html = '';
+    var html = '<div class="breadcrumb">الرئيسية / المحفوظات</div>';
+    html += '<h2 style="font-size:24px;margin-bottom:18px;">السور المفضلة والآيات المحفوظة</h2>';
 
     if (favEntries.length){
-      html += '<div class="bm-section-title">السور المفضلة</div>';
+      html += '<section class="panel" style="margin-top:0;"><h3>السور المفضلة</h3><div class="bm-list">';
       favEntries.forEach(function(n){
         var s = SURAHS[n-1];
         if (!s) return;
@@ -769,10 +800,11 @@
           '<button class="fs-del" data-n="'+n+'" title="حذف">✕</button>'+
         '</div>';
       });
+      html += '</div></section>';
     }
 
     if (bookmarks.length){
-      html += '<div class="bm-section-title">الآيات المحفوظة</div>';
+      html += '<section class="panel"><h3>الآيات المحفوظة</h3><div class="bm-list">';
       bookmarks.forEach(function(ref){
         var parts = ref.split(':'); var c = parseInt(parts[0],10), v = parseInt(parts[1],10);
         var s = SURAHS[c-1];
@@ -780,45 +812,48 @@
         if (!s || !verse) return;
         html += '<div class="bm-row" data-c="'+c+'" data-v="'+v+'">'+
           '<div style="flex:1;min-width:0;"><div class="bm-ref">'+s.ar+' · آية '+v+'</div>'+
-          '<div class="bm-snip">'+verse.t.slice(0,40)+'…</div></div>'+
+          '<div class="bm-snip">'+verse.t.slice(0,60)+'…</div></div>'+
           '<button class="bm-del" data-c="'+c+'" data-v="'+v+'" title="حذف">✕</button>'+
         '</div>';
       });
+      html += '</div></section>';
     }
 
     if (!favEntries.length && !bookmarks.length){
-      html = '<div class="empty-note">لا توجد سور مفضلة ولا آيات محفوظة بعد. اضغط على النجمة ☆ بجانب أي سورة أو آية لإضافتها هنا.</div>';
+      html += '<div class="empty-note">لا توجد سور مفضلة ولا آيات محفوظة بعد. اضغط على النجمة ☆ بجانب أي سورة في القائمة، أو بجانب أي آية أثناء القراءة، لإضافتها هنا.</div>';
     }
 
-    sidebarList.innerHTML = html;
+    mainInner.innerHTML = html;
 
-    sidebarList.querySelectorAll('.fs-row').forEach(function(el){
+    mainInner.querySelectorAll('.fs-row').forEach(function(el){
       el.addEventListener('click', function(e){
         if (e.target.closest('.fs-del')) return;
         openSurah(parseInt(el.dataset.n,10), 1);
       });
     });
-    sidebarList.querySelectorAll('.fs-del').forEach(function(btn){
+    mainInner.querySelectorAll('.fs-del').forEach(function(btn){
       btn.addEventListener('click', function(e){
         e.stopPropagation();
         delete favSurahs[parseInt(btn.dataset.n,10)];
         saveFavSurahs();
-        renderBookmarkList();
+        renderSurahList(document.getElementById('surahfilter').value);
+        openBookmarksView();
       });
     });
-    sidebarList.querySelectorAll('.bm-row').forEach(function(el){
+    mainInner.querySelectorAll('.bm-row').forEach(function(el){
       el.addEventListener('click', function(e){
         if (e.target.classList.contains('bm-del')) return;
         openSurah(parseInt(el.dataset.c,10), parseInt(el.dataset.v,10));
       });
     });
-    sidebarList.querySelectorAll('.bm-del').forEach(function(el){
+    mainInner.querySelectorAll('.bm-del').forEach(function(el){
       el.addEventListener('click', function(e){
         e.stopPropagation();
         toggleBookmark(parseInt(el.dataset.c,10), parseInt(el.dataset.v,10));
-        renderBookmarkList();
+        openBookmarksView();
       });
     });
+    document.getElementById('main').scrollTop = 0;
   }
 
   function toggleBookmark(c, v){
@@ -930,9 +965,9 @@
     html += '<div class="stat-grid">';
     html += statTile(st.totalSurahs, 'سورة');
     html += statTile(st.totalVerses, 'آية');
-    html += statTile(st.totalWordsFull.toLocaleString('ar-EG'), 'كلمة (تقريبًا)');
-    html += statTile(st.totalLettersFull.toLocaleString('ar-EG'), 'حرف، مع التشكيل');
-    html += statTile(st.totalLettersBare.toLocaleString('ar-EG'), 'حرف، بدون تشكيل');
+    html += statTile(st.totalWordsFull.toLocaleString('en-US'), 'كلمة (تقريبًا)');
+    html += statTile(st.totalLettersFull.toLocaleString('en-US'), 'حرف، مع التشكيل');
+    html += statTile(st.totalLettersBare.toLocaleString('en-US'), 'حرف، بدون تشكيل');
     html += '</div>';
 
     html += '<section class="panel"><h3>أكثر 20 كلمة تكرارًا</h3>';
@@ -1013,6 +1048,7 @@
         '<div class="feature-card" data-open="adhkar-layl"><div class="fc-icon">🌌</div><div class="fc-title">أذكار النوم</div><div class="fc-sub">لتحصين نومك حتى الصباح</div></div>'+
         '<div class="feature-card" data-open="douaa"><div class="fc-icon">🤲</div><div class="fc-title">الأدعية المأثورة</div><div class="fc-sub">أهم الأدعية من القرآن والسنة</div></div>'+
         '<div class="feature-card" data-tasbih="1"><div class="fc-icon">📿</div><div class="fc-title">عداد التسبيح</div><div class="fc-sub">قواعد التسبيح مع عداد تفاعلي</div></div>'+
+        '<div class="feature-card" data-prayers="1"><div class="fc-icon">🕋</div><div class="fc-title">الصلوات وسننها الرواتب</div><div class="fc-sub">الفرائض والسنن المؤكدة يوميًا</div></div>'+
         '<div class="feature-card" data-salat="1"><div class="fc-icon">🕌</div><div class="fc-title">السور المستحبة لكل صلاة</div><div class="fc-sub">ماذا نقرأ في الفجر، المغرب، الوتر...</div></div>'+
       '</div></section>';
 
@@ -1027,6 +1063,9 @@
     });
     mainInner.querySelectorAll('.feature-card[data-salat]').forEach(function(el){
       el.addEventListener('click', function(){ openSalatView(); });
+    });
+    mainInner.querySelectorAll('.feature-card[data-prayers]').forEach(function(el){
+      el.addEventListener('click', function(){ openPrayersInfoView(); });
     });
   }
 
@@ -1175,6 +1214,41 @@
     { name:'صلاة العيدين', icon:'🌟', note:'يُستحب قراءة سورتي ق واقتربت الساعة (القمر)، أو الأعلى والغاشية.', surahs:[50,54], altSurahs:[87,88], src:'رواه مسلم' }
   ];
 
+  var DAILY_PRAYERS = [
+    { name:'الفجر', fard:2, before:2, after:0, note:'ركعتا سنة الفجر قبل الفريضة، وهي آكد السنن الرواتب — ورد أنها خير من الدنيا وما فيها (رواه مسلم)' },
+    { name:'الظهر', fard:4, before:4, after:2, note:'' },
+    { name:'العصر', fard:4, before:0, after:0, note:'لا سنة راتبة مؤكدة بعدها، وورد استحباب أربع ركعات قبلها دون تأكيد الرواتب' },
+    { name:'المغرب', fard:3, before:0, after:2, note:'' },
+    { name:'العشاء', fard:4, before:0, after:2, note:'' }
+  ];
+
+  function openPrayersInfoView(){
+    switchTab('surahs');
+    currentChapter = null;
+    var html = '<div class="breadcrumb">الرئيسية / الصلوات والسنن</div>';
+    html += '<h2 style="font-size:24px;margin-bottom:6px;">الصلوات المفروضة والسنن الرواتب</h2>';
+    html += '<p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:22px;">الصلوات الخمس المفروضة يوميًا، مع السنن الرواتب المؤكدة المرافقة لها كما وردت في السنة النبوية.</p>';
+
+    html += '<div class="table-wrap"><table class="datatable"><thead><tr>'+
+      '<th>الصلاة</th><th>الفرض (ركعات)</th><th>سنة قبلية</th><th>سنة بعدية</th></tr></thead><tbody>'+
+      DAILY_PRAYERS.map(function(p){
+        return '<tr><td>'+p.name+'</td><td>'+p.fard+'</td><td>'+(p.before||'—')+'</td><td>'+(p.after||'—')+'</td></tr>';
+      }).join('') + '</tbody></table></div>';
+
+    html += '<p style="color:var(--ink-dim);font-size:12px;margin-top:10px;">مجموع السنن الرواتب المؤكدة اثنتا عشرة ركعة (٢+٤+٢+٢+٢): "من ثبت له اثنتا عشرة ركعة في يوم وليلة بنى الله له بيتًا في الجنة" — رواه مسلم والترمذي.</p>';
+
+    DAILY_PRAYERS.forEach(function(p){
+      if (!p.note) return;
+      html += '<div class="salat-card" style="margin-top:16px;"><div class="salat-top"><div class="salat-name">'+p.name+'</div></div><div class="salat-note">'+p.note+'</div></div>';
+    });
+
+    html += '<div style="margin-top:24px;"><button class="iconbtn" id="gotosurahrecs">السور المستحبة لكل صلاة ←</button></div>';
+
+    mainInner.innerHTML = html;
+    document.getElementById('gotosurahrecs').addEventListener('click', openSalatView);
+    document.getElementById('main').scrollTop = 0;
+  }
+
   function surahChip(n){
     var s = SURAHS[n-1];
     if (!s) return '';
@@ -1186,7 +1260,8 @@
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / السور المستحبة لكل صلاة</div>';
     html += '<h2 style="font-size:24px;margin-bottom:6px;">السور المستحبة لكل صلاة</h2>';
-    html += '<p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:22px;">اجتهادات واستحبابات ثابتة في السنة النبوية، وليست شروطًا لصحة الصلاة — فالواجب في كل ركعة هو الفاتحة، وما بعدها من اختيار المصلي. اضغط على اسم أي سورة للانتقال إليها مباشرة.</p>';
+    html += '<p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:6px;">اجتهادات واستحبابات ثابتة في السنة النبوية، وليست شروطًا لصحة الصلاة — فالواجب في كل ركعة هو الفاتحة، وما بعدها من اختيار المصلي. اضغط على اسم أي سورة للانتقال إليها مباشرة.</p>';
+    html += '<div style="margin-bottom:22px;"><button class="iconbtn" id="gotoprayersinfo">→ الصلوات المفروضة وسننها الرواتب</button></div>';
 
     PRAYER_RECS.forEach(function(p){
       html += '<div class="salat-card">'+
@@ -1629,10 +1704,8 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
   /* ---------------- Sidebar tabs ---------------- */
   function switchTab(tab){
     document.querySelectorAll('.stab').forEach(function(el){ el.classList.toggle('active', el.dataset.tab===tab); });
-    var filterBox = document.getElementById('sidebar-filter');
-    filterBox.style.display = tab === 'surahs' ? '' : 'none';
-    if (tab === 'surahs') renderSurahList(document.getElementById('surahfilter').value);
-    else if (tab === 'bookmarks') renderBookmarkList();
+    renderSurahList(document.getElementById('surahfilter').value);
+    if (tab === 'bookmarks') openBookmarksView();
     else if (tab === 'stats') renderStats();
   }
   document.querySelectorAll('.stab').forEach(function(el){
