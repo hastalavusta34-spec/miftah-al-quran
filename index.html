@@ -707,7 +707,7 @@
       <input id="surahfilter" type="text" placeholder="ابحث عن سورة بالاسم أو الرقم…" autocomplete="off">
     </div>
     <div id="sidebar-list"></div>
-    <div id="sidebar-footer">© جميع الحقوق محفوظة — دالي إيهاب</div>
+    <div id="sidebar-footer">© جميع الحقوق محفوظة — إيهاب دالي</div>
   </div>
 
   <div id="main">
@@ -1197,6 +1197,7 @@
         '<div class="feature-card" data-prophets="1"><div class="fc-icon">📖</div><div class="fc-title">قصص الأنبياء عليهم السلام</div><div class="fc-sub">'+((DATA.prophets||[]).length)+' نبيًا مذكورًا في القرآن، قصة كل واحد على حدة</div></div>'+
         '<div class="feature-card" data-hadith="1"><div class="fc-icon">📜</div><div class="fc-title">أحاديث نبوية</div><div class="fc-sub">أحاديث صحيحة مختارة من سنة النبي محمد صلى الله عليه وسلم</div></div>'+
         '<div class="feature-card" data-hifdh="1"><div class="fc-icon">👶</div><div class="fc-title">حفظ القرآن للأطفال</div><div class="fc-sub">تلاوة بالتجويد ثم ترديد بصوت الأطفال</div></div>'+
+        '<div class="feature-card" data-hisn="1"><div class="fc-icon">🏰</div><div class="fc-title">حصن الحصين</div><div class="fc-sub">مختارات من أذكار الإمام ابن الجزري</div></div>'+
       '</div></section>';
 
     mainInner.innerHTML = html;
@@ -1223,6 +1224,61 @@
     mainInner.querySelectorAll('.feature-card[data-hifdh]').forEach(function(el){
       el.addEventListener('click', function(){ openHifdhView(); });
     });
+    mainInner.querySelectorAll('.feature-card[data-hisn]').forEach(function(el){
+      el.addEventListener('click', function(){ openHisnView(); });
+    });
+  }
+
+  /* ---------------- Hisn al-Hasin: selections in the tradition of Imam Ibn al-Jazari ---------------- */
+  var HISN_DATA = [
+    { cat:'أذكار عند الاستيقاظ من النوم', items:[
+      { text:'الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ', src:'رواه البخاري' },
+      { text:'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَٰهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ، رَبِّ اغْفِرْ لِي', src:'رواه البخاري' }
+    ]},
+    { cat:'أذكار الدخول والخروج (المنزل والخلاء)', items:[
+      { text:'بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ', src:'رواه أبو داود والترمذي — دعاء الخروج من المنزل' },
+      { text:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ', src:'متفق عليه — دعاء دخول الخلاء' }
+    ]},
+    { cat:'أذكار عند الفزع والخوف', items:[
+      { text:'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ غَضَبِهِ وَعِقَابِهِ، وَشَرِّ عِبَادِهِ، وَمِنْ هَمَزَاتِ الشَّيَاطِينِ وَأَنْ يَحْضُرُونِ', src:'رواه أبو داود والترمذي' },
+      { text:'حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ', src:'سورة آل عمران، الآية 173' }
+    ]},
+    { cat:'أذكار المريض وطلب الشفاء', items:[
+      { text:'اللَّهُمَّ رَبَّ النَّاسِ، أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لَا شِفَاءَ إِلَّا شِفَاؤُكَ، شِفَاءً لَا يُغَادِرُ سَقَمًا', src:'متفق عليه' },
+      { text:'أَسْأَلُ اللَّهَ الْعَظِيمَ رَبَّ الْعَرْشِ الْعَظِيمِ أَنْ يَشْفِيَكَ', src:'رواه أبو داود والترمذي — تُقال سبع مرات عند عيادة المريض' }
+    ]},
+    { cat:'أذكار عند نزول منزل أو مكان', items:[
+      { text:'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ', src:'رواه مسلم — من قالها لم يضره شيء حتى يرتحل من منزله' }
+    ]},
+    { cat:'أذكار الغضب وسوء الخلق', items:[
+      { text:'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ', src:'متفق عليه — يُقال عند الغضب' }
+    ]},
+    { cat:'أذكار الرزق وقضاء الحوائج', items:[
+      { text:'اللَّهُمَّ اكْفِنِي بِحَلَالِكَ عَنْ حَرَامِكَ، وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ', src:'رواه الترمذي' },
+      { text:'يَا حَيُّ يَا قَيُّومُ، بِرَحْمَتِكَ أَسْتَغِيثُ، أَصْلِحْ لِي شَأْنِي كُلَّهُ، وَلَا تَكِلْنِي إِلَى نَفْسِي طَرْفَةَ عَيْنٍ', src:'رواه النسائي والحاكم' }
+    ]},
+    { cat:'أذكار الثناء على الله والتوحيد', items:[
+      { text:'لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ', src:'سورة الأنبياء، الآية 87 — دعاء ذي النون' },
+      { text:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ، وَرِضَا نَفْسِهِ، وَزِنَةَ عَرْشِهِ، وَمِدَادَ كَلِمَاتِهِ', src:'رواه مسلم' }
+    ]}
+  ];
+
+  function openHisnView(){
+    switchTab('surahs');
+    currentChapter = null;
+    var html = '<div class="breadcrumb">الرئيسية / حصن الحصين</div>';
+    html += '<h2 style="font-size:24px;margin-bottom:6px;">حصن الحصين</h2>';
+    html += '<p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:6px;">مختارات من الأذكار والأدعية الثابتة، في تراث الإمام الحافظ محمد بن محمد بن الجزري (ت 833هـ) صاحب كتاب «الحصن الحصين من كلام سيد المرسلين»، وما تفرّع عنه من مختصرات كحصن المسلم.</p>';
+    html += '<p style="color:var(--ink-dim);font-size:12px;margin-bottom:22px;">هذه مختارات موجزة وليست نصًا كاملًا للكتاب الأصلي؛ للاطلاع على الكتاب كاملًا بأسانيده يُرجع إلى طبعاته المحققة المعتمدة.</p>';
+    HISN_DATA.forEach(function(group){
+      html += '<section class="panel"><h3>'+group.cat+'</h3>';
+      group.items.forEach(function(h){
+        html += '<div class="dhikr-card"><div class="dk-ar">'+h.text+'</div><div class="dk-src">'+h.src+'</div></div>';
+      });
+      html += '</section>';
+    });
+    mainInner.innerHTML = html;
+    document.getElementById('main').scrollTop = 0;
   }
 
   /* ---------------- Hifdh corner for children (adult tajwid + child repetition) ---------------- */
