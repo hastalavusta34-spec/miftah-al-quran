@@ -769,6 +769,25 @@
   var sidebarList = document.getElementById('sidebar-list');
   var currentChapter = null;
 
+  /* ---------------- Back-button handling (Android/iOS): go back within the app, not exit it ---------------- */
+  var isHomeScreen = true;
+  var hasExtraHistoryEntry = false;
+  function markScreen(isHome){
+    isHomeScreen = isHome;
+    if (!isHome && !hasExtraHistoryEntry){
+      try{ history.pushState({ miftah: true }, ''); }catch(e){}
+      hasExtraHistoryEntry = true;
+    }
+  }
+  window.addEventListener('popstate', function(){
+    if (!isHomeScreen){
+      hasExtraHistoryEntry = false;
+      if (typeof closeMobileSidebar === 'function') closeMobileSidebar();
+      switchTab('surahs');
+      renderWelcome();
+    }
+  });
+
   function stripDiacritics(s){
     return s.replace(/[ؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۨ-ۭ࣓-ࣣ࣡-ࣿ]/g, '')
             .replace(/[آأإٱ]/g, 'ا')
@@ -905,6 +924,7 @@
   }
 
   function openBookmarksView(){
+    markScreen(false);
     var html = '<div class="breadcrumb">الرئيسية / المحفوظات</div>';
     html += '<h2 style="font-size:24px;margin-bottom:18px;">قوائم السور المفضلة والآيات المحفوظة</h2>';
 
@@ -1096,6 +1116,7 @@
   }
 
   function renderStats(){
+    markScreen(false);
     var st = computeStats();
     var maxFreq = st.freq.length ? st.freq[0].n : 1;
     var html = '';
@@ -1156,6 +1177,7 @@
 
   /* ---------------- Welcome view ---------------- */
   function renderWelcome(){
+    markScreen(true);
     currentChapter = null;
     renderSurahList(document.getElementById('surahfilter').value);
     var st = computeStats();
@@ -1264,6 +1286,7 @@
   ];
 
   function openHisnView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / حصن الحصين</div>';
@@ -1286,6 +1309,7 @@
   var CHILD_AUDIO_SURAHS = [1, 2, 4, 5, 10];
 
   function openHifdhView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / حفظ القرآن للأطفال</div>';
@@ -1422,6 +1446,7 @@
   ];
 
   function openHadithView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / أحاديث نبوية</div>';
@@ -1440,6 +1465,7 @@
 
   /* ---------------- Stories of the Prophets ---------------- */
   function openProphetsIndex(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var list = DATA.prophets || [];
@@ -1468,6 +1494,7 @@
   }
 
   function openProphetStory(idx){
+    markScreen(false);
     var list = DATA.prophets || [];
     var p = list[idx];
     if (!p) { openProphetsIndex(); return; }
@@ -1610,6 +1637,7 @@
   }
 
   function openAdhkarView(which){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '';
@@ -1699,6 +1727,7 @@
   ];
 
   function openPrayersInfoView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / الصلوات والسنن</div>';
@@ -1761,6 +1790,7 @@
   }
 
   function openSalatView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / السور المستحبة لكل صلاة</div>';
@@ -1796,6 +1826,7 @@
   }
 
   function openTasbihView(){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     var html = '<div class="breadcrumb">الرئيسية / التسبيح</div>';
@@ -1836,6 +1867,7 @@
   function saveTasbihState(){ lsSet(LS_KEYS.tasbih, tasbihState); }
 
   function openTasbihCounter(ruleIdx){
+    markScreen(false);
     var rule = TASBIH_RULES[ruleIdx];
     var st = getTasbihState(ruleIdx);
     if (st.stepIndex >= rule.steps.length) st.stepIndex = 0;
@@ -1897,6 +1929,7 @@
 
   /* ---------------- Surah reading view ---------------- */
   function openSurah(c, scrollToV){
+    markScreen(false);
     currentChapter = c;
     var s = SURAHS[c-1];
     var list = VERSES[c] || [];
@@ -2166,6 +2199,7 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
   }
 
   function openSearchResults(q){
+    markScreen(false);
     switchTab('surahs');
     currentChapter = null;
     renderSurahList(document.getElementById('surahfilter').value);
