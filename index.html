@@ -787,6 +787,21 @@
       renderWelcome();
     }
   });
+  // Any in-app "go home" action (button/link) must go through this, never call
+  // renderWelcome() directly from a click handler: if a guard history entry is
+  // pending, consuming it via history.back() (instead of leaving it dangling)
+  // keeps hasExtraHistoryEntry in sync with the real history depth. Without this,
+  // the guard entry gets silently orphaned and the very next surah opened has no
+  // buffer entry left, so a single back press exits the app instead of going home.
+  function goHome(){
+    if (typeof closeMobileSidebar === 'function') closeMobileSidebar();
+    if (hasExtraHistoryEntry){
+      history.back();
+    } else {
+      switchTab('surahs');
+      renderWelcome();
+    }
+  }
 
   function stripDiacritics(s){
     return s.replace(/[ؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۨ-ۭ࣓-ࣣ࣡-ࣿ]/g, '')
@@ -1784,7 +1799,7 @@
         var g = btn.dataset.goto;
         if (g === 'fara') openPrayersInfoView();
         else if (g === 'salat') openSalatView();
-        else { switchTab('surahs'); renderWelcome(); }
+        else { goHome(); }
       });
     });
   }
@@ -2311,7 +2326,7 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
     themeBtn.textContent = cur === 'auto' ? '◐ المظهر' : (cur === 'dark' ? '● داكن' : '○ فاتح');
   })();
 
-  document.getElementById('homebtn').addEventListener('click', function(){ switchTab('surahs'); renderWelcome(); closeMobileSidebar(); });
+  document.getElementById('homebtn').addEventListener('click', function(){ goHome(); });
 
   /* ---------------- Mobile sidebar overlay ---------------- */
   var sidebarEl = document.getElementById('sidebar');
