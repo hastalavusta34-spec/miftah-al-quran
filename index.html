@@ -702,6 +702,7 @@
       <button class="stab active" data-tab="surahs">السور</button>
       <button class="stab" data-tab="bookmarks">المحفوظات</button>
       <button class="stab" data-tab="stats">الإحصائيات</button>
+      <button class="stab" data-tab="prayertimes">مواقيت الصلاة</button>
     </div>
     <div id="sidebar-filter">
       <input id="surahfilter" type="text" placeholder="ابحث عن سورة بالاسم أو الرقم…" autocomplete="off">
@@ -1128,6 +1129,103 @@
     STATS = { totalVerses:totalVerses, totalWordsFull:totalWordsFull, totalLettersFull:totalLettersFull,
               totalLettersBare:totalLettersBare, perSurah:perSurah, freq:freqArr, totalSurahs:SURAHS.length };
     return STATS;
+  }
+
+  /* ---------------- Prayer times (Sousse, Tunisia) ---------------- */
+  var PRAYER_LABELS = [
+    {k:'Fajr', ar:'الفجر'},
+    {k:'Sunrise', ar:'الشروق'},
+    {k:'Dhuhr', ar:'الظهر'},
+    {k:'Asr', ar:'العصر'},
+    {k:'Maghrib', ar:'المغرب'},
+    {k:'Isha', ar:'العشاء'}
+  ];
+  var prayerCountdownTimer = null;
+
+  function todayKeyDMY(){
+    var d = new Date();
+    function p(n){ return (n<10?'0':'')+n; }
+    return { dmy: p(d.getDate())+'-'+p(d.getMonth()+1)+'-'+d.getFullYear(), iso: d.toISOString().slice(0,10) };
+  }
+
+  function fetchPrayerTimes(cb){
+    var keys = todayKeyDMY();
+    var cacheRaw = null;
+    try { cacheRaw = JSON.parse(localStorage.getItem('mq_prayertimes_cache')||'null'); } catch(e){}
+    if (cacheRaw && cacheRaw.date === keys.iso && cacheRaw.timings){
+      cb(null, cacheRaw);
+      return;
+    }
+    var url = 'https://api.aladhan.com/v1/timingsByCity/'+keys.dmy+'?city=Sousse&country=Tunisia&method=3';
+    fetch(url).then(function(r){ return r.json(); }).then(function(data){
+      if (!data || data.code !== 200 || !data.data || !data.data.timings){
+        cb(new Error('bad-response'));
+        return;
+      }
+      var result = { date: keys.iso, timings: data.data.timings, hijri: data.data.date && data.data.date.hijri };
+      try { localStorage.setItem('mq_prayertimes_cache', JSON.stringify(result)); } catch(e){}
+      cb(null, result);
+    }).catch(function(err){ cb(err); });
+  }
+
+  function renderPrayerTimes(){
+    markScreen(false);
+    if (prayerCountdownTimer){ clearInterval(prayerCountdownTimer); prayerCountdownTimer = null; }
+    var html = '';
+    html += '<div class="breadcrumb">مواقيت الصلاة</div>';
+    html += '<h2 style="font-size:24px;margin-bottom:6px;">مواقيت الصلاة — سوسة، تونس</h2>';
+    html += '<p style="color:var(--ink-dim);font-size:14px;max-width:60ch;">مواقيت محسوبة حسب رابطة العالم الإسلامي، وقد تختلف بدقائق قليلة عن التوقيت الرسمي لديوان الإفتاء التونسي.</p>';
+    html += '<div id="prayertimes-content" class="stat-grid"><p style="color:var(--ink-dim);">جارِ التحميل…</p></div>';
+    mainInner.innerHTML = html;
+
+    fetchPrayerTimes(function(err, result){
+      var box = document.getElementById('prayertimes-content');
+      if (!box) return;
+      if (err){
+        box.innerHTML = '<p style="color:var(--ink-dim);">تعذّر جلب مواقيت الصلاة. تحقق من اتصالك بالإنترنت ثم أعد المحاولة.</p>';
+        return;
+      }
+      var now = new Date();
+      var nowMin = now.getHours()*60 + now.getMinutes();
+      var rows = PRAYER_LABELS.map(function(p){
+        var raw = (result.timings[p.k]||'').split(' ')[0];
+        var parts = raw.split(':').map(Number);
+        var min = (parts[0]||0)*60 + (parts[1]||0);
+        return { k:p.k, ar:p.ar, time:raw, min:min };
+      });
+      var next = rows.find(function(r){ return r.min > nowMin; }) || rows[0];
+
+      var tilesHtml = rows.map(function(r){
+        var isNext = r.k === next.k;
+        return '<div class="stat-tile"'+(isNext?' style="border-color:var(--teal);"':'')+'>'+
+          '<div style="font-size:22px;font-weight:700;'+(isNext?'color:var(--teal);':'')+'">'+r.time+'</div>'+
+          '<div style="font-size:13px;color:var(--ink-dim);">'+r.ar+(isNext?' — القادمة':'')+'</div></div>';
+      }).join('');
+
+      var hijriStr = result.hijri ? (result.hijri.day+' '+(result.hijri.month && result.hijri.month.ar)+' '+result.hijri.year+' هـ') : '';
+
+      var wrap = document.getElementById('prayertimes-content');
+      wrap.className = '';
+      wrap.innerHTML =
+        (hijriStr ? '<p style="color:var(--ink-dim);font-size:13px;margin-bottom:10px;">'+hijriStr+'</p>' : '') +
+        '<div class="stat-grid">'+tilesHtml+'</div>' +
+        '<section class="panel" style="margin-top:16px;"><h3>الوقت المتبقي للصلاة القادمة</h3>' +
+        '<div id="prayercountdown" style="font-size:20px;font-weight:700;color:var(--teal);"></div></section>';
+
+      function updateCountdown(){
+        var n = new Date();
+        var nMin = n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds();
+        var targetMin = next.min*60;
+        var diff = targetMin - nMin;
+        if (diff < 0) diff += 24*3600;
+        var h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
+        function p2(x){ return (x<10?'0':'')+x; }
+        var el = document.getElementById('prayercountdown');
+        if (el) el.textContent = next.ar+' بعد '+p2(h)+':'+p2(m)+':'+p2(s);
+      }
+      updateCountdown();
+      prayerCountdownTimer = setInterval(updateCountdown, 1000);
+    });
   }
 
   function renderStats(){
@@ -2294,8 +2392,10 @@ var DIA_TEST = new RegExp('[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-
   function switchTab(tab){
     document.querySelectorAll('.stab').forEach(function(el){ el.classList.toggle('active', el.dataset.tab===tab); });
     renderSurahList(document.getElementById('surahfilter').value);
+    if (tab !== 'prayertimes' && prayerCountdownTimer){ clearInterval(prayerCountdownTimer); prayerCountdownTimer = null; }
     if (tab === 'bookmarks') openBookmarksView();
     else if (tab === 'stats') renderStats();
+    else if (tab === 'prayertimes') renderPrayerTimes();
   }
   document.querySelectorAll('.stab').forEach(function(el){
     el.addEventListener('click', function(){
